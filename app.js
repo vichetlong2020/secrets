@@ -37,7 +37,8 @@ mongoose.connect("mongodb://localhost:27017/userDB");
 const userSchema = new mongoose.Schema({
   email: String,
   password: String,
-  googleId: String//to store google id for next login
+  googleId: String,//to store google id for next login
+  secret: String
 });
 // const secret = "Thisisourlittlesecret." //create encryptkey
 // console.log(process.env.SECRET);
@@ -101,12 +102,48 @@ app.get("/register", function(req, res) {
 });
 
 app.get("/secrets", function(req, res){
+  // if(req.isAuthenticated()){//after login and with cookie enable, page will render to secreit page otherwise will redirect to login
+  //   res.render("secrets");
+  // }
+  // else{
+  //   res.redirect("/login");
+  // }
+  User.find({"secreit": {$ne: null}}, function(err, foundUsers){
+    if(err){
+      console.log(err);
+    }
+    else{
+      if(foundUsers){
+        res.render("secrets", {userWithSecrets: foundUsers});
+      }
+    }
+  });
+});
+
+app.get("/submit", function(req, res){
   if(req.isAuthenticated()){//after login and with cookie enable, page will render to secreit page otherwise will redirect to login
-    res.render("secrets");
+    res.render("submit");
   }
   else{
     res.redirect("/login");
   }
+});
+
+app.post("/submit", function(req,res){
+  const sumittedSecret = req.body.secret;
+  User.findById(req.user._id, function(err, foundUser){
+    if(err){
+      console.log(err);
+    }
+    else{
+      if(foundUser){
+        foundUser.secret = sumittedSecret;
+        foundUser.save(function(){
+          res.redirect("/secrets");
+        });
+      }
+    }
+  });
 });
 
 app.post("/register", function(req, res){
