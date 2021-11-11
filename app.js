@@ -1,10 +1,12 @@
 //jshint esversion:6
+require("dotenv").config(); //npm to install this package and need to declare top most to this environment variable
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 // const _ = require("lodash");
 const mongoose = require("mongoose");
-const encrypt = require("mongoose-encryption");//npm to install this encryption package
+// const encrypt = require("mongoose-encryption");//npm to install this encryption package
+const md5 = require("md5");
 
 const app = express();
 app.use(express.static("public"));
@@ -18,8 +20,9 @@ const userSchema = new mongoose.Schema({
   email: String,
   password: String
 });
-const secret = "Thisisourlittlesecret." //create encryptkey
-userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["password"]}); //use plunin to encrypt userschema and define the field to be encrypted
+// const secret = "Thisisourlittlesecret." //create encryptkey
+// console.log(process.env.SECRET);
+// userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ["password"]}); //use plunin to encrypt userschema and define the field to be encrypted
 const User = mongoose.model("User", userSchema);
 
 app.get("/", function(req, res) {
@@ -35,14 +38,10 @@ app.get("/register", function(req, res) {
   res.render("register");
 });
 
-app.listen(3000, function() {
-  console.log("Server started on port 3000");
-});
-
 app.post("/register", function(req, res){
   const newUser = new User({
     email: req.body.username,
-    password: req.body.password
+    password: md5(req.body.password)
   });
 
   newUser.save(function(err) {
@@ -58,7 +57,7 @@ app.post("/register", function(req, res){
 
 app.post("/login", function(req, res) {
   const userEmail = req.body.username
-  const userPassword = req.body.password
+  const userPassword = md5(req.body.password)
   User.findOne({email: userEmail}, function(err, foundUser) {
     if (err) {
       console.log(err);
@@ -74,4 +73,8 @@ app.post("/login", function(req, res) {
       }
     }
   });
+});
+
+app.listen(3000, function() {
+  console.log("Server started on port 3000");
 });
